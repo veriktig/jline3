@@ -18,6 +18,8 @@ import org.jline.terminal.Attributes;
 import org.jline.terminal.Size;
 import org.jline.terminal.Terminal;
 
+import com.veriktig.scandium.api.state.InternalState;
+
 public interface TerminalProvider {
 
     String name();
@@ -52,9 +54,11 @@ public interface TerminalProvider {
     int systemStreamWidth(SystemStream stream);
 
     static TerminalProvider load(String name) throws IOException {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        //ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = InternalState.getScAPIClassLoader();
         if (cl == null) {
-            cl = ClassLoader.getSystemClassLoader();
+            throw new IOException("null ClassLoader for " + name);
+            //cl = ClassLoader.getSystemClassLoader();
         }
         InputStream is = cl.getResourceAsStream("META-INF/services/org/jline/terminal/provider/" + name);
         if (is != null) {
