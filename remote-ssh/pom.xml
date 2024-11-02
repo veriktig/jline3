@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.jline</groupId>
         <artifactId>jline-parent</artifactId>
-        <version>3.27.1-SNAPSHOT</version>
+        <version>3.27.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>jline-remote-ssh</artifactId>
@@ -53,6 +53,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
