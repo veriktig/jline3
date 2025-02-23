@@ -126,6 +126,5 @@ public class PromptBuilderTest {
         // promptableElementList.get(0)
 
         // HashMap<String, Object> result = prompt.prompt(promptableElementList);
-
     }
 }
