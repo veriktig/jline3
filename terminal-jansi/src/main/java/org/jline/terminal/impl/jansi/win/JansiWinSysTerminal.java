@@ -54,6 +54,35 @@ public class JansiWinSysTerminal extends AbstractWindowsTerminal<Long> {
             SignalHandler signalHandler,
             boolean paused)
             throws IOException {
+        return createTerminal(
+                provider,
+                systemStream,
+                name,
+                type,
+                ansiPassThrough,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                nativeSignals,
+                signalHandler,
+                paused);
+    }
+
+    public static JansiWinSysTerminal createTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            String name,
+            String type,
+            boolean ansiPassThrough,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            boolean nativeSignals,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
         // Get input console mode
         int[] inMode = new int[1];
         if (Kernel32.GetConsoleMode(consoleIn, inMode) == 0) {
@@ -90,6 +119,9 @@ public class JansiWinSysTerminal extends AbstractWindowsTerminal<Long> {
                 name,
                 type,
                 encoding,
+                stdinEncoding,
+                stdoutEncoding,
+                stderrEncoding,
                 nativeSignals,
                 signalHandler,
                 consoleIn,
@@ -160,6 +192,41 @@ public class JansiWinSysTerminal extends AbstractWindowsTerminal<Long> {
             long outConsole,
             int outMode)
             throws IOException {
+        this(
+                provider,
+                systemStream,
+                writer,
+                name,
+                type,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                nativeSignals,
+                signalHandler,
+                inConsole,
+                inMode,
+                outConsole,
+                outMode);
+    }
+
+    JansiWinSysTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            Writer writer,
+            String name,
+            String type,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            boolean nativeSignals,
+            SignalHandler signalHandler,
+            long inConsole,
+            int inMode,
+            long outConsole,
+            int outMode)
+            throws IOException {
         super(
                 provider,
                 systemStream,
@@ -167,6 +234,9 @@ public class JansiWinSysTerminal extends AbstractWindowsTerminal<Long> {
                 name,
                 type,
                 encoding,
+                stdinEncoding,
+                stdoutEncoding,
+                stderrEncoding,
                 nativeSignals,
                 signalHandler,
                 inConsole,
@@ -290,5 +360,23 @@ public class JansiWinSysTerminal extends AbstractWindowsTerminal<Long> {
         strings.remove(InfoCmp.Capability.parm_insert_line);
         strings.remove(InfoCmp.Capability.delete_line);
         strings.remove(InfoCmp.Capability.parm_delete_line);
+    }
+
+    @Override
+    public int getDefaultForegroundColor() {
+        CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO();
+        if (GetConsoleScreenBufferInfo(outConsole, info) == 0) {
+            return -1;
+        }
+        return convertAttributeToRgb(info.attributes & 0x0F, true);
+    }
+
+    @Override
+    public int getDefaultBackgroundColor() {
+        CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO();
+        if (GetConsoleScreenBufferInfo(outConsole, info) == 0) {
+            return -1;
+        }
+        return convertAttributeToRgb((info.attributes & 0xF0) >> 4, false);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -81,6 +81,16 @@ public class AbstractWindowsTerminalTest {
     }
 
     private static class TestTerminal extends AbstractWindowsTerminal<Object> {
+        @Override
+        public int getDefaultForegroundColor() {
+            return -1;
+        }
+
+        @Override
+        public int getDefaultBackgroundColor() {
+            return -1;
+        }
+
         public TestTerminal(StringWriter sw) throws IOException {
             super(
                     null,

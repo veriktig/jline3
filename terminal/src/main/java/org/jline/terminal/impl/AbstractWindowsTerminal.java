@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -33,21 +33,64 @@ import org.jline.utils.Signals;
 import org.jline.utils.WriterOutputStream;
 
 /**
- * The AbstractWindowsTerminal is used as the base class for windows terminal.
- * Due to windows limitations, mostly the missing support for ansi sequences,
- * the only way to create a correct terminal is to use the windows api to set
- * character attributes, move the cursor, erasing, etc...
+ * Base implementation for terminals on Windows systems.
  *
- * UTF-8 support is also lacking in windows and the code page supposed to
- * emulate UTF-8 is a bit broken. In order to work around this broken
- * code page, windows api WriteConsoleW is used directly.  This means that
- * the writer() becomes the primary output, while the output() is bridged
- * to the writer() using a WriterOutputStream wrapper.
+ * <p>
+ * The AbstractWindowsTerminal class provides a foundation for terminal implementations
+ * on Windows operating systems. It addresses Windows-specific limitations and
+ * peculiarities, particularly related to console handling, character encoding,
+ * and ANSI sequence support.
+ * </p>
+ *
+ * <p>
+ * Due to Windows limitations, particularly the historically limited support for ANSI
+ * sequences, this implementation uses Windows-specific APIs to handle terminal
+ * operations such as setting character attributes, moving the cursor, erasing content,
+ * and other terminal functions. This approach provides better compatibility and
+ * performance compared to emulating ANSI sequences on Windows.
+ * </p>
+ *
+ * <p>
+ * UTF-8 support has also been historically problematic on Windows, with the code page
+ * meant to emulate UTF-8 being somewhat broken. To work around these issues, this
+ * implementation uses the Windows API WriteConsoleW directly. As a result, the
+ * writer() method becomes the primary output mechanism, while the output() stream
+ * is bridged to the writer using a WriterOutputStream wrapper.
+ * </p>
+ *
+ * <p>
+ * Key features provided by this class include:
+ * </p>
+ * <ul>
+ *   <li>Windows console API integration</li>
+ *   <li>Color attribute handling</li>
+ *   <li>Cursor positioning and manipulation</li>
+ *   <li>Proper UTF-8 and Unicode support</li>
+ *   <li>Input processing for Windows console events</li>
+ * </ul>
+ *
+ * <p>
+ * This class is designed to be extended by concrete implementations that use
+ * specific Windows API access mechanisms (e.g., JNA, JNI, FFM).
+ * </p>
+ *
+ * @see org.jline.terminal.impl.AbstractTerminal
+ * @param <Console> the Windows console type used by the specific implementation
  */
 public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal {
 
     public static final String TYPE_WINDOWS = "windows";
     public static final String TYPE_WINDOWS_256_COLOR = "windows-256color";
+
+    // Windows console color constants
+    protected static final int FOREGROUND_BLUE = 0x0001;
+    protected static final int FOREGROUND_GREEN = 0x0002;
+    protected static final int FOREGROUND_RED = 0x0004;
+    protected static final int FOREGROUND_INTENSITY = 0x0008;
+    protected static final int BACKGROUND_BLUE = 0x0010;
+    protected static final int BACKGROUND_GREEN = 0x0020;
+    protected static final int BACKGROUND_RED = 0x0040;
+    protected static final int BACKGROUND_INTENSITY = 0x0080;
     public static final String TYPE_WINDOWS_CONEMU = "windows-conemu";
     public static final String TYPE_WINDOWS_VTP = "windows-vtp";
 
@@ -103,15 +146,51 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
             Console outConsole,
             int outConsoleMode)
             throws IOException {
-        super(name, type, encoding, signalHandler);
+        this(
+                provider,
+                systemStream,
+                writer,
+                name,
+                type,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                nativeSignals,
+                signalHandler,
+                inConsole,
+                inConsoleMode,
+                outConsole,
+                outConsoleMode);
+    }
+
+    @SuppressWarnings("this-escape")
+    public AbstractWindowsTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            Writer writer,
+            String name,
+            String type,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            boolean nativeSignals,
+            SignalHandler signalHandler,
+            Console inConsole,
+            int inConsoleMode,
+            Console outConsole,
+            int outConsoleMode)
+            throws IOException {
+        super(name, type, encoding, stdinEncoding, stdoutEncoding, stderrEncoding, signalHandler);
         this.provider = provider;
         this.systemStream = systemStream;
         NonBlockingPumpReader reader = NonBlocking.nonBlockingPumpReader();
         this.slaveInputPipe = reader.getWriter();
         this.reader = reader;
-        this.input = NonBlocking.nonBlockingStream(reader, encoding());
+        this.input = NonBlocking.nonBlockingStream(reader, stdinEncoding());
         this.writer = new PrintWriter(writer);
-        this.output = new WriterOutputStream(writer, encoding());
+        this.output = new WriterOutputStream(writer, stdoutEncoding());
         this.inConsole = inConsole;
         this.outConsole = outConsole;
         parseInfoCmp();
@@ -282,7 +361,7 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
                     if (isAlt) {
                         processInputChar('\033');
                     }
-                    if (isCtrl && ch != ' ' && ch != '\n' && ch != 0x7f) {
+                    if (isCtrl && ch != '\n' && ch != 0x7f) {
                         processInputChar((char) (ch == '?' ? 0x7f : Character.toUpperCase(ch) & 0x1f));
                     } else {
                         processInputChar(ch);
@@ -412,6 +491,66 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
         focusTracking = tracking;
         return true;
     }
+
+    /**
+     * Get the default foreground color for Windows terminals.
+     *
+     * @return the RGB value of the default foreground color, or -1 if not available
+     */
+    public abstract int getDefaultForegroundColor();
+
+    /**
+     * Get the default background color for Windows terminals.
+     *
+     * @return the RGB value of the default background color, or -1 if not available
+     */
+    public abstract int getDefaultBackgroundColor();
+
+    /**
+     * Convert Windows console attribute to RGB color.
+     *
+     * @param attribute the Windows console attribute
+     * @param foreground true for foreground color, false for background color
+     * @return the RGB value of the color
+     */
+    protected int convertAttributeToRgb(int attribute, boolean foreground) {
+        // Map Windows console attributes to ANSI colors
+        int index = 0;
+        if (foreground) {
+            if ((attribute & FOREGROUND_RED) != 0) index |= 0x1;
+            if ((attribute & FOREGROUND_GREEN) != 0) index |= 0x2;
+            if ((attribute & FOREGROUND_BLUE) != 0) index |= 0x4;
+            if ((attribute & FOREGROUND_INTENSITY) != 0) index |= 0x8;
+        } else {
+            if ((attribute & BACKGROUND_RED) != 0) index |= 0x1;
+            if ((attribute & BACKGROUND_GREEN) != 0) index |= 0x2;
+            if ((attribute & BACKGROUND_BLUE) != 0) index |= 0x4;
+            if ((attribute & BACKGROUND_INTENSITY) != 0) index |= 0x8;
+        }
+        return ANSI_COLORS[index];
+    }
+
+    /**
+     * ANSI colors mapping.
+     */
+    protected static final int[] ANSI_COLORS = {
+        0x000000, // black
+        0xcd0000, // red
+        0x00cd00, // green
+        0xcdcd00, // yellow
+        0x0000ee, // blue
+        0xcd00cd, // magenta
+        0x00cdcd, // cyan
+        0xe5e5e5, // white
+        0x7f7f7f, // bright black
+        0xff0000, // bright red
+        0x00ff00, // bright green
+        0xffff00, // bright yellow
+        0x5c5cff, // bright blue
+        0xff00ff, // bright magenta
+        0x00ffff, // bright cyan
+        0xffffff // bright white
+    };
 
     @Override
     public boolean canPauseResume() {

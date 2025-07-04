@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -50,6 +50,24 @@ import static org.jline.keymap.KeyMap.ctrl;
 import static org.jline.keymap.KeyMap.del;
 import static org.jline.keymap.KeyMap.key;
 
+/**
+ * A terminal pager similar to the 'less' Unix command.
+ * <p>
+ * This class provides a file viewer with features including:
+ * </p>
+ * <ul>
+ *   <li>Forward and backward navigation</li>
+ *   <li>Search functionality</li>
+ *   <li>Syntax highlighting</li>
+ *   <li>Line numbering</li>
+ *   <li>Status display</li>
+ *   <li>Multiple file support</li>
+ * </ul>
+ * <p>
+ * The implementation supports many of the key bindings and features of the
+ * traditional Unix 'less' command, adapted for JLine's terminal handling.
+ * </p>
+ */
 public class Less {
 
     private static final int ESCAPE = 27;
@@ -224,9 +242,9 @@ public class Less {
                 if (!line.isEmpty() && !line.startsWith("#")) {
                     List<String> parts = SyntaxHighlighter.RuleSplitter.split(line);
                     if (parts.get(0).equals(COMMAND_INCLUDE)) {
-                        SyntaxHighlighter.nanorcInclude(parts.get(1), syntaxFiles);
+                        SyntaxHighlighter.nanorcInclude(file, parts.get(1), syntaxFiles);
                     } else if (parts.get(0).equals(COMMAND_THEME)) {
-                        SyntaxHighlighter.nanorcTheme(parts.get(1), syntaxFiles);
+                        SyntaxHighlighter.nanorcTheme(file, parts.get(1), syntaxFiles);
                     } else if (parts.size() == 2
                             && (parts.get(0).equals("set") || parts.get(0).equals("unset"))) {
                         String option = parts.get(1);

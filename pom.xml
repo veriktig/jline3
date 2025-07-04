@@ -15,7 +15,7 @@
 
     <groupId>org.jline</groupId>
     <artifactId>jline-parent</artifactId>
-    <version>3.29.1-SNAPSHOT</version>
+    <version>3.30.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>JLine</name>
     <description>JLine</description>
@@ -83,9 +83,22 @@
         <url>https://github.com/jline/jline3/issues</url>
     </issueManagement>
 
+    <distributionManagement>
+        <repository>
+            <id>jline-publish</id>
+            <name>JLine3 Releases</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>jline-publish</id>
+            <name>JLine3 Snapshots</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.outputTimestamp>2025-01-30T16:12:13Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2025-05-28T07:49:03Z</project.build.outputTimestamp>
 
         <java.build.version>22</java.build.version>
         <java.release.version>8</java.release.version>
@@ -94,20 +107,21 @@
         <native.image.skip>true</native.image.skip>
         <automatic.module.name />
 
-        <jna.version>5.16.0</jna.version>
-        <jansi.version>2.4.1</jansi.version>
+        <jna.version>5.17.0</jna.version>
+        <jansi.version>2.4.2</jansi.version>
         <juniversalchardet.version>1.0.3</juniversalchardet.version>
-        <sshd.version>2.14.0</sshd.version>
-        <easymock.version>5.5.0</easymock.version>
-        <junit.version>5.11.4</junit.version>
+        <sshd.version>2.15.0</sshd.version>
+        <easymock.version>5.6.0</easymock.version>
+        <junit.version>5.13.0</junit.version>
         <gogo.runtime.version>1.1.6</gogo.runtime.version>
         <gogo.jline.version>1.1.8</gogo.jline.version>
-        <slf4j.version>2.0.16</slf4j.version>
+        <slf4j.version>2.0.17</slf4j.version>
         <findbugs.version>3.0.2</findbugs.version>
-        <groovy.version>4.0.25</groovy.version>
+        <groovy.version>4.0.27</groovy.version>
         <ivy.version>2.5.3</ivy.version>
-        <graal.version>24.1.2</graal.version>
+        <graal.version>24.2.1</graal.version>
         <graal.plugin.version>21.2.0</graal.plugin.version>
+        <palantir.version>2.67.0</palantir.version>
 
         <surefire.argLine>--add-opens java.base/java.io=ALL-UNNAMED</surefire.argLine>
     </properties>
@@ -201,6 +215,12 @@
             <dependency>
                 <groupId>org.jline</groupId>
                 <artifactId>jline-console</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline-console-ui</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -335,6 +355,13 @@
                 <artifactId>jsr305</artifactId>
                 <version>${findbugs.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.palantir.javaformat</groupId>
+                <artifactId>palantir-java-format</artifactId>
+                <version>${palantir.version}</version>
+                <scope>provided</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -360,7 +387,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.4.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -375,7 +402,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.3</version>
+                    <version>3.1.4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -405,7 +432,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.2</version>
+                    <version>3.5.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -430,7 +457,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.14.0</version>
                     <configuration>
                         <showWarnings>true</showWarnings>
                         <release>${java.release.version}</release>
@@ -443,11 +470,6 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>0.7.0</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>3.6.0</version>
@@ -456,7 +478,7 @@
                 <plugin>
                     <groupId>com.mycila</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>4.6</version>
+                    <version>5.0.0</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
                         <strictCheck>true</strictCheck>
@@ -526,13 +548,9 @@
                             </goals>
                             <phase>verify</phase>
                             <configuration>
-                                <executable>gpg</executable>
-                                <gpgArguments>
-                                    <arg>--pinentry-mode</arg>
-                                    <arg>loopback</arg>
-                                </gpgArguments>
                                 <bestPractices>true</bestPractices>
-                                <useAgent>true</useAgent>
+                                <useAgent>false</useAgent>
+                                <signer>bc</signer>
                             </configuration>
                         </execution>
                     </executions>
@@ -541,7 +559,7 @@
                 <plugin>
                     <groupId>org.codehaus.gmavenplus</groupId>
                     <artifactId>gmavenplus-plugin</artifactId>
-                    <version>4.1.1</version>
+                    <version>4.2.0</version>
                 </plugin>
 
                 <plugin>
@@ -562,12 +580,12 @@
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.44.2</version>
+                    <version>2.44.4</version>
                     <configuration>
                         <java>
                             <toggleOffOn />
                             <palantirJavaFormat>
-                                <version>2.38.0</version>
+                                <version>${palantir.version}</version>
                             </palantirJavaFormat>
                             <importOrder>
                                 <order>java|javax,org,,\#</order>
@@ -710,30 +728,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.1.3</version>
-                <executions>
-                    <execution>
-                        <id>default-deploy</id>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>publish-to-central</id>
-                        <goals>
-                            <goal>publish</goal>
-                        </goals>
-                        <phase>deploy</phase>
-                        <configuration>
-                            <publishingServerId>central</publishingServerId>
-                        </configuration>
-                    </execution>
-                </executions>
+                <version>3.1.4</version>
             </plugin>
 
             <plugin>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -51,7 +51,6 @@ import static org.jline.keymap.KeyMap.ctrl;
 /**
  * Aggregate command registries.
  *
- * @author <a href="mailto:matti.rintanikkola@gmail.com">Matti Rinta-Nikkola</a>
  */
 public class SystemRegistryImpl implements SystemRegistry {
 
@@ -1017,7 +1016,7 @@ public class SystemRegistryImpl implements SystemRegistry {
          *            A string optionally containing standard java escape sequences.
          * @return The translated string.
          *
-         * @author Udo Klimaschewski, https://gist.github.com/uklimaschewski/6741769
+         * Based on code by Udo Klimaschewski, https://gist.github.com/uklimaschewski/6741769
          */
         private String unescape(String arg) {
             if (arg == null || !parser.isEscapeChar('\\')) {
@@ -1071,7 +1070,7 @@ public class SystemRegistryImpl implements SystemRegistry {
                         case ' ':
                             ch = ' ';
                             break;
-                            // Hex Unicode: u????
+                        // Hex Unicode: u????
                         case 'u':
                             if (i >= arg.length() - 5) {
                                 ch = 'u';
@@ -1230,18 +1229,16 @@ public class SystemRegistryImpl implements SystemRegistry {
             throw new UnknownCommandException("Invalid command: " + rawLine);
         }
         Object out;
-        if (isLocalCommand(command)) {
+        int id = registryId(command);
+        if (id > -1) {
+            Object[] _args = consoleId != null ? consoleEngine().expandParameters(args) : args;
+            out = commandRegistries[id].invoke(outputStream.getCommandSession(), command, _args);
+        } else if (scriptStore.hasScript(command) && consoleEngine() != null) {
+            out = consoleEngine().execute(command, rawLine, args);
+        } else if (isLocalCommand(command)) {
             out = localExecute(command, consoleId != null ? consoleEngine().expandParameters(args) : args);
         } else {
-            int id = registryId(command);
-            if (id > -1) {
-                Object[] _args = consoleId != null ? consoleEngine().expandParameters(args) : args;
-                out = commandRegistries[id].invoke(outputStream.getCommandSession(), command, _args);
-            } else if (scriptStore.hasScript(command) && consoleEngine() != null) {
-                out = consoleEngine().execute(command, rawLine, args);
-            } else {
-                throw new UnknownCommandException("Unknown command: " + command);
-            }
+            throw new UnknownCommandException("Unknown command: " + command);
         }
         return out;
     }

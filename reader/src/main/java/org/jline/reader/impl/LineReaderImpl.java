@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2023, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -41,6 +41,7 @@ import org.jline.terminal.Attributes.ControlChar;
 import org.jline.terminal.Terminal.Signal;
 import org.jline.terminal.Terminal.SignalHandler;
 import org.jline.terminal.impl.AbstractWindowsTerminal;
+import org.jline.terminal.impl.MouseSupport;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -61,12 +62,32 @@ import static org.jline.keymap.KeyMap.translate;
 import static org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTERNATE_CHARSET;
 
 /**
- * A reader for terminal applications. It supports custom tab-completion,
- * saveable command history, and command line editing.
+ * The default implementation of the {@link LineReader} interface.
+ * <p>
+ * This class provides a comprehensive implementation of line editing capabilities
+ * for interactive terminal applications, including:
+ * <ul>
+ *   <li>Command history navigation and management</li>
+ *   <li>Tab completion with customizable completion strategies</li>
+ *   <li>Syntax highlighting</li>
+ *   <li>Emacs and Vi editing modes</li>
+ *   <li>Key binding customization</li>
+ *   <li>Cut and paste with kill ring</li>
+ *   <li>Undo/redo functionality</li>
+ *   <li>Search through history</li>
+ *   <li>Multi-line editing</li>
+ *   <li>Character masking for password input</li>
+ * </ul>
+ * <p>
+ * This implementation is highly configurable through options and variables that
+ * control various aspects of its behavior. It also provides a rich set of widgets
+ * (editing functions) that can be bound to key sequences.
+ * <p>
+ * Most applications should not create instances of this class directly, but instead
+ * use the {@link LineReaderBuilder} to create properly configured instances.
  *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * @see LineReader
+ * @see LineReaderBuilder
  */
 @SuppressWarnings("StatementWithEmptyBody")
 public class LineReaderImpl implements LineReader, Flushable {
@@ -185,6 +206,7 @@ public class LineReaderImpl implements LineReader, Flushable {
     //
 
     protected final Map<Option, Boolean> options = new HashMap<>();
+    protected Thread maskThread = null;
 
     protected final Buffer buf = new BufferImpl();
     protected String tailTip = "";
@@ -292,6 +314,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected String alternateIn;
     protected String alternateOut;
+    protected int currentLine;
 
     public LineReaderImpl(Terminal terminal) throws IOException {
         this(terminal, terminal.getName(), null);
@@ -409,7 +432,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     @Override
     public MouseEvent readMouseEvent() {
-        return terminal.readMouseEvent(bindingReader::readCharacter);
+        return terminal.readMouseEvent(bindingReader::readCharacter, bindingReader.getLastBinding());
     }
 
     /**
@@ -667,6 +690,9 @@ public class LineReaderImpl implements LineReader, Flushable {
                     if (isSet(Option.AUTO_FRESH_LINE)) callWidget(FRESH_LINE);
                     if (isSet(Option.MOUSE)) terminal.trackMouse(Terminal.MouseTracking.Normal);
                     if (isSet(Option.BRACKETED_PASTE)) terminal.writer().write(BRACKETED_PASTE_ON);
+                } else if (isTerminalDumb() && maskingCallback != null) {
+                    // Setup masking thread for dumb terminals when reading a password
+                    setupMaskThread(prompt != null ? prompt : "");
                 }
 
                 callWidget(CALLBACK_INIT);
@@ -808,6 +834,46 @@ public class LineReaderImpl implements LineReader, Flushable {
         display = new Display(terminal, false);
         display.resize(size.getRows(), size.getColumns());
         if (isSet(Option.DELAY_LINE_WRAP)) display.setDelayLineWrap(true);
+    }
+
+    /**
+     * Setup the masking thread for dumb terminals.
+     * This is similar to the approach used in JLine 1.
+     *
+     * For dumb terminals, we can't process characters one by one, so we use a thread
+     * that continuously overwrites the input line to hide what the user is typing.
+     */
+    private void setupMaskThread(final String prompt) {
+        if (isTerminalDumb() && maskThread == null) {
+            // Create a prompt that will overwrite the current line and redisplay the prompt
+            final String fullPrompt = "\r" + prompt + "                                                   \r" + prompt;
+            maskThread = new Thread("JLine Mask Thread") {
+                public void run() {
+                    while (!Thread.interrupted()) {
+                        try {
+                            terminal.writer().write(fullPrompt);
+                            terminal.writer().flush();
+                            sleep(3);
+                        } catch (InterruptedException ie) {
+                            return;
+                        }
+                    }
+                }
+            };
+            maskThread.setPriority(Thread.MAX_PRIORITY);
+            maskThread.setDaemon(true);
+            maskThread.start();
+        }
+    }
+
+    /**
+     * Stops the masking thread for dumb terminals.
+     */
+    private void stopMaskThread() {
+        if (maskThread != null && maskThread.isAlive()) {
+            maskThread.interrupt();
+        }
+        maskThread = null;
     }
 
     @Override
@@ -2605,6 +2671,8 @@ public class LineReaderImpl implements LineReader, Flushable {
             terminal.trackMouse(Terminal.MouseTracking.Off);
             if (isSet(Option.BRACKETED_PASTE) && !isTerminalDumb())
                 terminal.writer().write(BRACKETED_PASTE_OFF);
+            // Stop the masking thread if it was started for dumb terminals
+            stopMaskThread();
             flush();
         }
         history.moveToEnd();
@@ -4176,6 +4244,13 @@ public class LineReaderImpl implements LineReader, Flushable {
                         case 'N':
                             sb.append(getInt(LINE_OFFSET, 0) + line);
                             break decode;
+                        case '*':
+                            if (this.currentLine == line) {
+                                sb.append("*");
+                            } else {
+                                sb.append(" ");
+                            }
+                            break decode;
                         case 'M':
                             if (message != null) sb.append(message);
                             break decode;
@@ -4277,6 +4352,19 @@ public class LineReaderImpl implements LineReader, Flushable {
             buf.setLength(0);
         }
         int line = 0;
+        // compute the current line number
+        this.currentLine = -1;
+        int cursor = this.buf.cursor();
+        int start = 0;
+        for (int l = 0; l < lines.size(); l++) {
+            int end = start + lines.get(l).length();
+            if (cursor >= start && cursor <= end) {
+                this.currentLine = l;
+                break;
+            }
+            start = end + 1;
+        }
+
         while (line < lines.size() - 1) {
             sb.append(lines.get(line)).append("\n");
             buf.append(lines.get(line)).append("\n");
@@ -6379,7 +6467,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         bind(map, DELETE_CHAR, key(Capability.key_dc));
         bind(map, KILL_WHOLE_LINE, key(Capability.key_dl));
         bind(map, OVERWRITE_MODE, key(Capability.key_ic));
-        bind(map, MOUSE, key(Capability.key_mouse));
+        bind(map, MOUSE, MouseSupport.keys(terminal));
         bind(map, BEGIN_PASTE, BRACKETED_PASTE_BEGIN);
         bind(map, FOCUS_IN, FOCUS_IN_SEQ);
         bind(map, FOCUS_OUT, FOCUS_OUT_SEQ);

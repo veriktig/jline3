@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -48,9 +48,24 @@ import org.jline.utils.Colors;
 import org.jline.utils.WCWidth;
 
 /**
- * Screen terminal implementation.
- * This class is copied from Apache Karaf WebConsole Gogo plugin
- * and slightly adapted to support alternate screen / resizing / 256 colors.
+ * A virtual terminal screen implementation.
+ * <p>
+ * This class provides a virtual terminal screen that can process ANSI escape sequences
+ * and maintain the state of a terminal display. It supports features including:
+ * </p>
+ * <ul>
+ *   <li>Cursor positioning and movement</li>
+ *   <li>Text attributes (bold, underline, etc.)</li>
+ *   <li>Color support (including 256 colors)</li>
+ *   <li>Screen clearing and scrolling</li>
+ *   <li>Alternate screen buffer</li>
+ *   <li>Screen resizing</li>
+ * </ul>
+ * <p>
+ * This implementation is based on the Apache Karaf WebConsole Gogo plugin,
+ * with adaptations to support alternate screen, resizing, and 256 colors.
+ * It follows the ECMA-48 standard for terminal control sequences.
+ * </p>
  */
 public class ScreenTerminal {
 
@@ -526,18 +541,18 @@ public class ScreenTerminal {
                     // Insertion replacement mode
                     vt100_mode_insert = state;
                     break;
-                    // 5 : SRTM: Status reporting transfer
-                    // 7 : VEM: Vertical editing
-                    // 10 : HEM: Horizontal editing
-                    // 11 : PUM: Positioning nit
-                    // 12 : SRM: Send/receive
-                    // 13 : FEAM: Format effector action
-                    // 14 : FETM: Format effector transfer
-                    // 15 : MATM: Multiple area transfer
-                    // 16 : TTM: Transfer termination
-                    // 17 : SATM: Selected area transfer
-                    // 18 : TSM: Tabulation stop
-                    // 19 : EBM: Editing boundary
+                // 5 : SRTM: Status reporting transfer
+                // 7 : VEM: Vertical editing
+                // 10 : HEM: Horizontal editing
+                // 11 : PUM: Positioning nit
+                // 12 : SRM: Send/receive
+                // 13 : FEAM: Format effector action
+                // 14 : FETM: Format effector transfer
+                // 15 : MATM: Multiple area transfer
+                // 16 : TTM: Transfer termination
+                // 17 : SATM: Selected area transfer
+                // 18 : TSM: Tabulation stop
+                // 19 : EBM: Editing boundary
                 case "20":
                     // LNM: Line feed/new line
                     vt100_mode_lfnewline = state;
@@ -546,7 +561,7 @@ public class ScreenTerminal {
                     // DECCKM: Cursor keys
                     vt100_mode_cursorkey = state;
                     break;
-                    // ?2 : DECANM: ANSI
+                // ?2 : DECANM: ANSI
                 case "?3":
                     // DECCOLM: Column
                     if (vt100_mode_column_switch) {
@@ -558,7 +573,7 @@ public class ScreenTerminal {
                         reset_screen();
                     }
                     break;
-                    // ?4 : DECSCLM: Scrolling
+                // ?4 : DECSCLM: Scrolling
                 case "?5":
                     // DECSCNM: Screen
                     vt100_mode_inverse = state;
@@ -576,22 +591,22 @@ public class ScreenTerminal {
                     // DECAWM: Autowrap
                     vt100_mode_autowrap = state;
                     break;
-                    // ?8 : DECARM: Autorepeat
-                    // ?9 : Interlacing
-                    // ?18 : DECPFF: Print form feed
-                    // ?19 : DECPEX: Printer extent
+                // ?8 : DECARM: Autorepeat
+                // ?9 : Interlacing
+                // ?18 : DECPFF: Print form feed
+                // ?19 : DECPEX: Printer extent
                 case "?25":
                     // DECTCEM: Text cursor enable
                     vt100_mode_cursor = state;
                     break;
-                    // ?34 : DECRLM: Cursor direction, right to left
-                    // ?35 : DECHEBM: Hebrew keyboard mapping
-                    // ?36 : DECHEM: Hebrew encoding mode
+                // ?34 : DECRLM: Cursor direction, right to left
+                // ?35 : DECHEBM: Hebrew keyboard mapping
+                // ?36 : DECHEM: Hebrew encoding mode
                 case "?40":
                     // Column switch control
                     vt100_mode_column_switch = state;
                     break;
-                    // ?42 : DECNRCM: National replacement character set
+                // ?42 : DECNRCM: National replacement character set
                 case "?1049":
                     // Alternate screen mode
                     if ((state && !vt100_mode_alt_screen) || (!state && vt100_mode_alt_screen)) {
@@ -611,7 +626,7 @@ public class ScreenTerminal {
                     }
                     vt100_mode_alt_screen = state;
                     break;
-                    // ?57 : DECNAKB: Greek keyboard mapping
+                // ?57 : DECNAKB: Greek keyboard mapping
                 case "?67":
                     // DECBKM: Backarrow key
                     vt100_mode_backspace = state;
@@ -1619,10 +1634,20 @@ public class ScreenTerminal {
         // Set width
         for (int i = 0; i < height; i++) {
             if (screen[i].length < w) {
+                int oldLength = screen[i].length;
                 screen[i] = Arrays.copyOf(screen[i], w);
+                // Fill the rest with spaces
+                for (int j = oldLength; j < w; j++) {
+                    screen[i][j] = attr | 0x00000020;
+                }
             }
             if (screen2[i].length < w) {
+                int oldLength = screen2[i].length;
                 screen2[i] = Arrays.copyOf(screen2[i], w);
+                // Fill the rest with spaces
+                for (int j = oldLength; j < w; j++) {
+                    screen2[i][j] = attr | 0x00000020;
+                }
             }
         }
         if (cx >= w) {
@@ -1657,7 +1682,17 @@ public class ScreenTerminal {
             long[][] sc = new long[h][];
             if (avail > 0) {
                 for (int i = 0; i < avail; i++) {
-                    sc[i] = history.remove(history.size() - avail + i);
+                    long[] historyLine = history.remove(history.size() - avail + i);
+                    // Check if the history line needs to be resized to match the new width
+                    if (historyLine.length < w) {
+                        int oldLength = historyLine.length;
+                        historyLine = Arrays.copyOf(historyLine, w);
+                        // Fill the rest with spaces
+                        for (int j = oldLength; j < w; j++) {
+                            historyLine[j] = attr | 0x00000020;
+                        }
+                    }
+                    sc[i] = historyLine;
                 }
                 cy += avail;
             }

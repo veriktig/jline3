@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -22,6 +22,36 @@ import org.jline.utils.NonBlocking;
 import org.jline.utils.NonBlockingInputStream;
 import org.jline.utils.NonBlockingReader;
 
+/**
+ * Terminal implementation for POSIX systems using a pseudoterminal (PTY).
+ *
+ * <p>
+ * The PosixPtyTerminal class provides a terminal implementation for POSIX systems
+ * (Linux, macOS, etc.) that uses a pseudoterminal (PTY) for terminal operations.
+ * It extends the AbstractPosixTerminal class and adds functionality specific to
+ * PTY-based terminals.
+ * </p>
+ *
+ * <p>
+ * This implementation is used when a full terminal emulation is needed, such as
+ * when creating a terminal for an external process or when connecting to a remote
+ * terminal. It provides access to the master and slave sides of the PTY, allowing
+ * for bidirectional communication with the terminal.
+ * </p>
+ *
+ * <p>
+ * Key features of this implementation include:
+ * </p>
+ * <ul>
+ *   <li>Full terminal emulation using a pseudoterminal</li>
+ *   <li>Support for terminal attributes and size changes</li>
+ *   <li>Access to both master and slave sides of the PTY</li>
+ *   <li>Support for non-blocking I/O</li>
+ * </ul>
+ *
+ * @see org.jline.terminal.impl.AbstractPosixTerminal
+ * @see org.jline.terminal.spi.Pty
+ */
 public class PosixPtyTerminal extends AbstractPosixTerminal {
 
     private final InputStream in;
@@ -66,15 +96,32 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
             SignalHandler signalHandler,
             boolean paused)
             throws IOException {
-        super(name, type, pty, encoding, signalHandler);
+        this(name, type, pty, in, out, encoding, encoding, encoding, encoding, signalHandler, paused);
+    }
+
+    @SuppressWarnings("this-escape")
+    public PosixPtyTerminal(
+            String name,
+            String type,
+            Pty pty,
+            InputStream in,
+            OutputStream out,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
+        super(name, type, pty, encoding, stdinEncoding, stdoutEncoding, stderrEncoding, signalHandler);
         this.in = Objects.requireNonNull(in);
         this.out = Objects.requireNonNull(out);
         this.masterInput = pty.getMasterInput();
         this.masterOutput = pty.getMasterOutput();
         this.input = new InputStreamWrapper(NonBlocking.nonBlocking(name, pty.getSlaveInput()));
         this.output = pty.getSlaveOutput();
-        this.reader = NonBlocking.nonBlocking(name, input, encoding());
-        this.writer = new PrintWriter(new OutputStreamWriter(output, encoding()));
+        this.reader = NonBlocking.nonBlocking(name, input, stdinEncoding());
+        this.writer = new PrintWriter(new OutputStreamWriter(output, stdoutEncoding()));
         parseInfoCmp();
         if (!paused) {
             resume();
@@ -110,8 +157,10 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
 
     @Override
     public void pause() {
-        synchronized (lock) {
-            paused = true;
+        try {
+            pause(false);
+        } catch (InterruptedException e) {
+            // nah
         }
     }
 
@@ -129,11 +178,13 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         if (p2 != null) {
             p2.interrupt();
         }
-        if (p1 != null) {
-            p1.join();
-        }
-        if (p2 != null) {
-            p2.join();
+        if (wait) {
+            if (p1 != null) {
+                p1.join();
+            }
+            if (p2 != null) {
+                p2.join();
+            }
         }
     }
 

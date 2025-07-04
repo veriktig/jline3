@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * Tests for the InfoCmp class.
  */
 public class InfoCmpTest {
 
@@ -45,7 +45,7 @@ public class InfoCmpTest {
         Map<Capability, Integer> ints = new HashMap<>();
         Map<Capability, String> strings = new HashMap<>();
 
-        String infocmp = InfoCmp.getLoadedInfoCmp("ansi");
+        String infocmp = InfoCmp.getDefaultInfoCmp("ansi");
         InfoCmp.parseInfoCmp(infocmp, bools, ints, strings);
         assertEquals(4, bools.size());
         assertTrue(strings.containsKey(Capability.byName("acsc")));
@@ -77,7 +77,7 @@ public class InfoCmpTest {
         Set<Capability> bools = new HashSet<>();
         Map<Capability, Integer> ints = new HashMap<>();
         Map<Capability, String> strings = new HashMap<>();
-        String infocmp = InfoCmp.getLoadedInfoCmp("xterm");
+        String infocmp = InfoCmp.getDefaultInfoCmp("xterm");
         InfoCmp.parseInfoCmp(infocmp, bools, ints, strings);
         assertEquals("\\E[J", strings.get(Capability.clr_eos));
     }

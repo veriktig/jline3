@@ -51,6 +51,35 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
             SignalHandler signalHandler,
             boolean paused)
             throws IOException {
+        return createTerminal(
+                provider,
+                systemStream,
+                name,
+                type,
+                ansiPassThrough,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                nativeSignals,
+                signalHandler,
+                paused);
+    }
+
+    public static NativeWinSysTerminal createTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            String name,
+            String type,
+            boolean ansiPassThrough,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            boolean nativeSignals,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
         try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
             // Get input console mode
             java.lang.foreign.MemorySegment consoleIn = GetStdHandle(STD_INPUT_HANDLE);
@@ -100,6 +129,9 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
                     name,
                     type,
                     encoding,
+                    stdinEncoding,
+                    stdoutEncoding,
+                    stderrEncoding,
                     nativeSignals,
                     signalHandler,
                     consoleIn,
@@ -157,6 +189,41 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
             java.lang.foreign.MemorySegment outConsole,
             int outConsoleMode)
             throws IOException {
+        this(
+                provider,
+                systemStream,
+                writer,
+                name,
+                type,
+                encoding,
+                encoding,
+                encoding,
+                encoding,
+                nativeSignals,
+                signalHandler,
+                inConsole,
+                inConsoleMode,
+                outConsole,
+                outConsoleMode);
+    }
+
+    NativeWinSysTerminal(
+            TerminalProvider provider,
+            SystemStream systemStream,
+            Writer writer,
+            String name,
+            String type,
+            Charset encoding,
+            Charset stdinEncoding,
+            Charset stdoutEncoding,
+            Charset stderrEncoding,
+            boolean nativeSignals,
+            SignalHandler signalHandler,
+            java.lang.foreign.MemorySegment inConsole,
+            int inConsoleMode,
+            java.lang.foreign.MemorySegment outConsole,
+            int outConsoleMode)
+            throws IOException {
         super(
                 provider,
                 systemStream,
@@ -164,6 +231,9 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
                 name,
                 type,
                 encoding,
+                stdinEncoding,
+                stdoutEncoding,
+                stderrEncoding,
                 nativeSignals,
                 signalHandler,
                 inConsole,
@@ -291,6 +361,28 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
                 throw new IOError(new IOException("Could not get the cursor position: " + getLastErrorMessage()));
             }
             return new Cursor(info.cursorPosition().x(), info.cursorPosition().y());
+        }
+    }
+
+    @Override
+    public int getDefaultForegroundColor() {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO(arena);
+            if (GetConsoleScreenBufferInfo(outConsole, info) == 0) {
+                return -1;
+            }
+            return convertAttributeToRgb(info.attributes() & 0x0F, true);
+        }
+    }
+
+    @Override
+    public int getDefaultBackgroundColor() {
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO(arena);
+            if (GetConsoleScreenBufferInfo(outConsole, info) == 0) {
+                return -1;
+            }
+            return convertAttributeToRgb((info.attributes() & 0xF0) >> 4, false);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author(s).
+ * Copyright (c) 2002-2025, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -41,7 +41,92 @@ import org.jline.utils.Log;
 import org.jline.utils.OSUtils;
 
 /**
- * Builder class to create terminals.
+ * Builder class to create {@link Terminal} instances with flexible configuration options.
+ * <p>
+ * TerminalBuilder provides a fluent API for creating and configuring terminals with various
+ * characteristics. It supports multiple implementation providers and handles the complexities
+ * of terminal creation across different platforms and environments.
+ * </p>
+ *
+ * <h2>Terminal Providers</h2>
+ * <p>
+ * JLine supports multiple terminal provider implementations:
+ * </p>
+ * <ul>
+ *   <li><b>FFM</b> - Foreign Function Memory (Java 22+) based implementation</li>
+ *   <li><b>JNI</b> - Java Native Interface based implementation</li>
+ *   <li><b>Jansi</b> - Implementation based on the Jansi library</li>
+ *   <li><b>JNA</b> - Java Native Access based implementation</li>
+ *   <li><b>Exec</b> - Implementation using external commands</li>
+ *   <li><b>Dumb</b> - Fallback implementation with limited capabilities</li>
+ * </ul>
+ * <p>
+ * The provider selection can be controlled using the {@link #provider(String)} method or the
+ * {@code org.jline.terminal.provider} system property. By default, providers are tried in the
+ * order: FFM, JNI, Jansi, JNA, Exec.
+ * </p>
+ *
+ * <h2>Native Library Support</h2>
+ * <p>
+ * When using providers that require native libraries (such as JNI, JNA, or Jansi), the appropriate
+ * native library will be loaded automatically. The loading of these libraries is handled by
+ * {@link org.jline.nativ.JLineNativeLoader} for the JNI provider.
+ * </p>
+ * <p>
+ * The native library loading can be configured using system properties as documented in
+ * {@link org.jline.nativ.JLineNativeLoader}.
+ * </p>
+ *
+ * <h2>System vs. Non-System Terminals</h2>
+ * <p>
+ * TerminalBuilder can create two types of terminals:
+ * </p>
+ * <ul>
+ *   <li><b>System terminals</b> - Connected to the actual system input/output streams</li>
+ *   <li><b>Non-system terminals</b> - Connected to custom input/output streams</li>
+ * </ul>
+ * <p>
+ * System terminals are created using {@link #system(boolean)} with a value of {@code true},
+ * while non-system terminals require specifying input and output streams using
+ * {@link #streams(InputStream, OutputStream)}.
+ * </p>
+ *
+ * <h2>Usage Examples</h2>
+ *
+ * <p>Creating a default system terminal:</p>
+ * <pre>
+ * Terminal terminal = TerminalBuilder.builder()
+ *     .system(true)
+ *     .build();
+ * </pre>
+ *
+ * <p>Creating a terminal with custom streams:</p>
+ * <pre>
+ * Terminal terminal = TerminalBuilder.builder()
+ *     .name("CustomTerminal")
+ *     .streams(inputStream, outputStream)
+ *     .encoding(StandardCharsets.UTF_8)
+ *     .build();
+ * </pre>
+ *
+ * <p>Creating a terminal with a specific provider:</p>
+ * <pre>
+ * Terminal terminal = TerminalBuilder.builder()
+ *     .system(true)
+ *     .provider("jni")
+ *     .build();
+ * </pre>
+ *
+ * <p>Creating a dumb terminal (with limited capabilities):</p>
+ * <pre>
+ * Terminal terminal = TerminalBuilder.builder()
+ *     .dumb(true)
+ *     .build();
+ * </pre>
+ *
+ * @see Terminal
+ * @see org.jline.nativ.JLineNativeLoader
+ * @see org.jline.terminal.spi.TerminalProvider
  */
 public final class TerminalBuilder {
 
@@ -50,6 +135,9 @@ public final class TerminalBuilder {
     //
 
     public static final String PROP_ENCODING = "org.jline.terminal.encoding";
+    public static final String PROP_STDIN_ENCODING = "org.jline.terminal.stdin.encoding";
+    public static final String PROP_STDOUT_ENCODING = "org.jline.terminal.stdout.encoding";
+    public static final String PROP_STDERR_ENCODING = "org.jline.terminal.stderr.encoding";
     public static final String PROP_CODEPAGE = "org.jline.terminal.codepage";
     public static final String PROP_TYPE = "org.jline.terminal.type";
     public static final String PROP_PROVIDER = "org.jline.terminal.provider";
@@ -124,26 +212,70 @@ public final class TerminalBuilder {
     }
 
     /**
-     * Returns the default system terminal.
-     * Terminals should be closed properly using the {@link Terminal#close()}
-     * method in order to restore the original terminal state.
+     * Returns the default system terminal with automatic configuration.
+     *
+     * <p>
+     * This method creates a terminal connected to the system's standard input and output streams,
+     * automatically detecting the appropriate terminal type and capabilities for the current environment.
+     * It's the simplest way to get a working terminal instance for most applications.
+     * </p>
+     *
+     * <p>
+     * The terminal is created with default settings, which include:
+     * <ul>
+     *   <li>System streams for input and output</li>
+     *   <li>Auto-detected terminal type</li>
+     *   <li>System default encoding</li>
+     *   <li>Native signal handling</li>
+     * </ul>
      *
      * <p>
      * This call is equivalent to:
      * <code>builder().build()</code>
      * </p>
      *
-     * @return the default system terminal
-     * @throws IOException if an error occurs
+     * <p>
+     * <strong>Important:</strong> Terminals should be closed properly using the {@link Terminal#close()}
+     * method when they are no longer needed in order to restore the original terminal state.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * try (Terminal terminal = TerminalBuilder.terminal()) {
+     *     terminal.writer().println("Hello, terminal!");
+     *     terminal.flush();
+     *     // Use terminal...
+     * }
+     * </pre>
+     *
+     * @return the default system terminal, never {@code null}
+     * @throws IOException if an error occurs during terminal creation
+     * @see #builder()
      */
     public static Terminal terminal() throws IOException {
         return builder().build();
     }
 
     /**
-     * Creates a new terminal builder instance.
+     * Creates a new terminal builder instance for configuring and creating terminals.
      *
-     * @return a builder
+     * <p>
+     * This method returns a builder that can be used to configure various aspects of the terminal
+     * before creating it. The builder provides a fluent API for setting terminal properties such as
+     * name, type, encoding, input/output streams, and more.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * Terminal terminal = TerminalBuilder.builder()
+     *     .name("MyTerminal")
+     *     .system(true)
+     *     .encoding(StandardCharsets.UTF_8)
+     *     .build();
+     * </pre>
+     *
+     * @return a new terminal builder instance, never {@code null}
+     * @see #terminal()
      */
     public static TerminalBuilder builder() {
         return new TerminalBuilder();
@@ -157,6 +289,9 @@ public final class TerminalBuilder {
     private OutputStream out;
     private String type;
     private Charset encoding;
+    private Charset stdinEncoding;
+    private Charset stdoutEncoding;
+    private Charset stderrEncoding;
     private int codepage;
     private Boolean system;
     private SystemOutput systemOutput;
@@ -253,8 +388,20 @@ public final class TerminalBuilder {
 
     /**
      * Enables or disables the {@link #PROP_PROVIDER_JNI}/{@code jni} terminal provider.
+     * <p>
+     * The JNI provider uses the JLine native library loaded by {@link org.jline.nativ.JLineNativeLoader}
+     * to access low-level terminal functionality. This provider generally offers the best performance
+     * and most complete terminal support.
+     * <p>
      * If not specified, the system property {@link #PROP_JNI} will be used if set.
-     * If not specified, the provider will be checked.
+     * If not specified, the provider will be checked for availability.
+     * <p>
+     * The native library loading can be configured using system properties as documented in
+     * {@link org.jline.nativ.JLineNativeLoader}.
+     *
+     * @param jni true to enable the JNI provider, false to disable it
+     * @return this builder
+     * @see org.jline.nativ.JLineNativeLoader
      */
     public TerminalBuilder jni(boolean jni) {
         this.jni = jni;
@@ -311,6 +458,10 @@ public final class TerminalBuilder {
      * <p>Use {@link Terminal#encoding()} to get the {@link Charset} that
      * should be used for a {@link Terminal}.</p>
      *
+     * <p>This method sets a single encoding for all streams (stdin, stdout, stderr).
+     * To set separate encodings for each stream, use {@link #stdinEncoding(Charset)},
+     * {@link #stdoutEncoding(Charset)}, and {@link #stderrEncoding(Charset)}.</p>
+     *
      * @param encoding The encoding to use or null to automatically select one
      * @return The builder
      * @throws UnsupportedCharsetException If the given encoding is not supported
@@ -330,12 +481,106 @@ public final class TerminalBuilder {
      * <p>Use {@link Terminal#encoding()} to get the {@link Charset} that
      * should be used to read/write from a {@link Terminal}.</p>
      *
+     * <p>This method sets a single encoding for all streams (stdin, stdout, stderr).
+     * To set separate encodings for each stream, use {@link #stdinEncoding(Charset)},
+     * {@link #stdoutEncoding(Charset)}, and {@link #stderrEncoding(Charset)}.</p>
+     *
      * @param encoding The encoding to use or null to automatically select one
      * @return The builder
      * @see Terminal#encoding()
      */
     public TerminalBuilder encoding(Charset encoding) {
         this.encoding = encoding;
+        return this;
+    }
+
+    /**
+     * Set the encoding to use for reading from standard input.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stdin.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @throws UnsupportedCharsetException If the given encoding is not supported
+     * @see Terminal#stdinEncoding()
+     */
+    public TerminalBuilder stdinEncoding(String encoding) throws UnsupportedCharsetException {
+        return stdinEncoding(encoding != null ? Charset.forName(encoding) : null);
+    }
+
+    /**
+     * Set the {@link Charset} to use for reading from standard input.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stdin.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @see Terminal#stdinEncoding()
+     */
+    public TerminalBuilder stdinEncoding(Charset encoding) {
+        this.stdinEncoding = encoding;
+        return this;
+    }
+
+    /**
+     * Set the encoding to use for writing to standard output.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stdout.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @throws UnsupportedCharsetException If the given encoding is not supported
+     * @see Terminal#stdoutEncoding()
+     */
+    public TerminalBuilder stdoutEncoding(String encoding) throws UnsupportedCharsetException {
+        return stdoutEncoding(encoding != null ? Charset.forName(encoding) : null);
+    }
+
+    /**
+     * Set the {@link Charset} to use for writing to standard output.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stdout.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @see Terminal#stdoutEncoding()
+     */
+    public TerminalBuilder stdoutEncoding(Charset encoding) {
+        this.stdoutEncoding = encoding;
+        return this;
+    }
+
+    /**
+     * Set the encoding to use for writing to standard error.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stderr.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @throws UnsupportedCharsetException If the given encoding is not supported
+     * @see Terminal#stderrEncoding()
+     */
+    public TerminalBuilder stderrEncoding(String encoding) throws UnsupportedCharsetException {
+        return stderrEncoding(encoding != null ? Charset.forName(encoding) : null);
+    }
+
+    /**
+     * Set the {@link Charset} to use for writing to standard error.
+     * If {@code null} (the default value), JLine will use the value from
+     * the "stderr.encoding" system property if set, or fall back to the
+     * general encoding.
+     *
+     * @param encoding The encoding to use or null to automatically select one
+     * @return The builder
+     * @see Terminal#stderrEncoding()
+     */
+    public TerminalBuilder stderrEncoding(Charset encoding) {
+        this.stderrEncoding = encoding;
         return this;
     }
 
@@ -442,6 +687,9 @@ public final class TerminalBuilder {
             name = "JLine terminal";
         }
         Charset encoding = computeEncoding();
+        Charset stdinEncoding = computeStdinEncoding();
+        Charset stdoutEncoding = computeStdoutEncoding();
+        Charset stderrEncoding = computeStderrEncoding();
         String type = computeType();
 
         String provider = this.provider;
@@ -495,6 +743,9 @@ public final class TerminalBuilder {
                                     type,
                                     ansiPassThrough,
                                     encoding,
+                                    stdinEncoding,
+                                    stdoutEncoding,
+                                    stderrEncoding,
                                     nativeSignals,
                                     signalHandler,
                                     paused,
@@ -538,7 +789,18 @@ public final class TerminalBuilder {
                 }
                 type = getDumbTerminalType(dumb, systemStream);
                 terminal = new DumbTerminalProvider()
-                        .sysTerminal(name, type, false, encoding, nativeSignals, signalHandler, paused, systemStream);
+                        .sysTerminal(
+                                name,
+                                type,
+                                false,
+                                encoding,
+                                stdinEncoding,
+                                stdoutEncoding,
+                                stderrEncoding,
+                                nativeSignals,
+                                signalHandler,
+                                paused,
+                                systemStream);
                 if (OSUtils.IS_WINDOWS) {
                     Attributes attr = terminal.getAttributes();
                     attr.setInputFlag(Attributes.InputFlag.IGNCR, true);
@@ -550,7 +812,18 @@ public final class TerminalBuilder {
                 if (terminal == null) {
                     try {
                         terminal = prov.newTerminal(
-                                name, type, in, out, encoding, signalHandler, paused, attributes, size);
+                                name,
+                                type,
+                                in,
+                                out,
+                                encoding,
+                                stdinEncoding,
+                                stdoutEncoding,
+                                stderrEncoding,
+                                signalHandler,
+                                paused,
+                                attributes,
+                                size);
                     } catch (Throwable t) {
                         Log.debug("Error creating " + prov.name() + " based terminal: ", t.getMessage(), t);
                         exception.addSuppressed(t);
@@ -696,6 +969,48 @@ public final class TerminalBuilder {
             } else {
                 encoding = StandardCharsets.UTF_8;
             }
+        }
+        return encoding;
+    }
+
+    public Charset computeStdinEncoding() {
+        return computeSpecificEncoding(this.stdinEncoding, PROP_STDIN_ENCODING, "stdin.encoding");
+    }
+
+    public Charset computeStdoutEncoding() {
+        return computeSpecificEncoding(this.stdoutEncoding, PROP_STDOUT_ENCODING, "stdout.encoding");
+    }
+
+    public Charset computeStderrEncoding() {
+        return computeSpecificEncoding(this.stderrEncoding, PROP_STDERR_ENCODING, "stderr.encoding");
+    }
+
+    /**
+     * Helper method to compute encoding from a specific field, JLine property, and standard Java property.
+     *
+     * @param specificEncoding the specific encoding field value
+     * @param jlineProperty the JLine-specific property name
+     * @param standardProperty the standard Java property name
+     * @return the computed encoding, falling back to the general encoding if needed
+     */
+    private Charset computeSpecificEncoding(Charset specificEncoding, String jlineProperty, String standardProperty) {
+        Charset encoding = specificEncoding;
+        if (encoding == null) {
+            // First try JLine specific property
+            String charsetName = System.getProperty(jlineProperty);
+            if (charsetName != null && Charset.isSupported(charsetName)) {
+                encoding = Charset.forName(charsetName);
+            }
+            // Then try standard Java property
+            if (encoding == null) {
+                charsetName = System.getProperty(standardProperty);
+                if (charsetName != null && Charset.isSupported(charsetName)) {
+                    encoding = Charset.forName(charsetName);
+                }
+            }
+        }
+        if (encoding == null) {
+            encoding = computeEncoding();
         }
         return encoding;
     }
