@@ -9,13 +9,11 @@
     https://opensource.org/licenses/BSD-3-Clause
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
 
     <groupId>org.jline</groupId>
     <artifactId>jline-parent</artifactId>
-    <version>3.30.5-SNAPSHOT</version>
+    <version>${nisse.jgit.dynamicVersion}</version>
     <packaging>pom</packaging>
     <name>JLine</name>
     <description>JLine</description>
@@ -50,31 +48,10 @@
         </mailingList>
     </mailingLists>
 
-    <modules>
-        <module>native</module>
-        <module>terminal</module>
-        <module>terminal-ffm</module>
-        <module>terminal-jna</module>
-        <module>terminal-jansi</module>
-        <module>terminal-jni</module>
-        <module>reader</module>
-        <module>builtins</module>
-        <module>console-ui</module>
-        <module>console</module>
-        <module>groovy</module>
-        <module>remote-ssh</module>
-        <module>remote-telnet</module>
-        <module>style</module>
-        <module>curses</module>
-        <module>demo</module>
-        <module>graal</module>
-        <module>jansi-core</module>
-    </modules>
-
     <scm>
         <connection>scm:git:https://github.com/jline/jline3.git</connection>
         <developerConnection>scm:git:https://github.com/jline/jline3.git</developerConnection>
-        <tag>jline-parent-3.26.3</tag>
+        <tag>${nisse.jgit.dynamicVersion}</tag>
         <url>http://github.com/jline/jline3</url>
     </scm>
 
@@ -98,11 +75,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.outputTimestamp>2025-05-28T07:49:03Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>${nisse.jgit.dateIso8601}</project.build.outputTimestamp>
 
         <java.build.version>22</java.build.version>
-        <java.release.version>8</java.release.version>
-        <maven.version>3.9.6</maven.version>
+        <java.release.version>11</java.release.version>
+        <maven.version>4.0.0-rc-3</maven.version>
 
         <native.image.skip>true</native.image.skip>
         <automatic.module.name />
@@ -110,131 +87,24 @@
         <jna.version>5.17.0</jna.version>
         <jansi.version>2.4.2</jansi.version>
         <juniversalchardet.version>1.0.3</juniversalchardet.version>
-        <sshd.version>2.15.0</sshd.version>
+        <sshd.version>2.16.0</sshd.version>
         <easymock.version>5.6.0</easymock.version>
         <junit.version>5.13.4</junit.version>
         <gogo.runtime.version>1.1.6</gogo.runtime.version>
         <gogo.jline.version>1.1.8</gogo.jline.version>
         <slf4j.version>2.0.17</slf4j.version>
         <findbugs.version>3.0.2</findbugs.version>
-        <groovy.version>4.0.27</groovy.version>
+        <groovy.version>5.0.1</groovy.version>
         <ivy.version>2.5.3</ivy.version>
         <graal.version>24.2.2</graal.version>
         <graal.plugin.version>21.2.0</graal.plugin.version>
-        <palantir.version>2.72.0</palantir.version>
+        <palantir.version>2.74.0</palantir.version>
 
-        <surefire.argLine>--add-opens java.base/java.io=ALL-UNNAMED</surefire.argLine>
+        <surefire.argLine>--add-opens java.base/java.io=org.jline.nativ --add-opens java.base/java.io=org.jline.terminal</surefire.argLine>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-native</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-terminal</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-terminal-ffm</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-terminal-jansi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-terminal-jni</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-terminal-jna</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-reader</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-curses</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-builtins</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-remote-ssh</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-remote-telnet</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-style</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-groovy</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-console</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jline-console-ui</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jansi-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jline</groupId>
-                <artifactId>jansi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.fusesource.jansi</groupId>
@@ -411,11 +281,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>3.1.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.3.1</version>
                 </plugin>
@@ -432,7 +297,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.3</version>
+                    <version>3.5.4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -462,17 +327,32 @@
                         <showWarnings>true</showWarnings>
                         <release>${java.release.version}</release>
                         <compilerArgs>
-                            <arg>-Xlint:all,-options,-processing</arg>
+                            <arg>-Xlint:all,-options,-processing,-restricted</arg>
                             <arg>-Werror</arg>
                         </compilerArgs>
                         <fork>true</fork>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>default-testCompile</id>
+                            <goals>
+                                <goal>testCompile</goal>
+                            </goals>
+                            <phase>test-compile</phase>
+                            <configuration>
+                                <compilerArgs>
+                                    <arg>-Xlint:all,-options,-processing,-exports,-restricted,-missing-explicit-ctor</arg>
+                                    <!-- Remove -Werror for test compilation -->
+                                </compilerArgs>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                 </plugin>
 
                 <plugin>
@@ -565,7 +445,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.11.2</version>
+                    <version>3.11.3</version>
                     <configuration>
                         <notimestamp>true</notimestamp>
                     </configuration>
@@ -574,13 +454,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-wrapper-plugin</artifactId>
-                    <version>3.3.2</version>
+                    <version>3.3.4</version>
                 </plugin>
 
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.45.0</version>
+                    <version>2.46.1</version>
                     <configuration>
                         <java>
                             <toggleOffOn />
@@ -714,19 +594,6 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <useReleaseProfile>false</useReleaseProfile>
-                    <goals>deploy</goals>
-                    <preparationProfiles>bundle,javadoc,format-check,sign</preparationProfiles>
-                    <releaseProfiles>bundle,javadoc,format-check,sign</releaseProfiles>
-                    <tagNameFormat>jline-@{project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>3.1.4</version>
             </plugin>
@@ -751,10 +618,6 @@
                     <name>!nobundle</name>
                 </property>
             </activation>
-            <modules>
-                <module>jline</module>
-                <module>jansi</module>
-            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -771,6 +634,10 @@
                     </plugin>
                 </plugins>
             </build>
+            <subprojects>
+                <subproject>jline</subproject>
+                <subproject>jansi</subproject>
+            </subprojects>
         </profile>
 
         <profile>
@@ -857,5 +724,25 @@
             </build>
         </profile>
     </profiles>
+
+    <subprojects>
+        <subproject>native</subproject>
+        <subproject>terminal</subproject>
+        <subproject>terminal-ffm</subproject>
+        <subproject>terminal-jni</subproject>
+        <subproject>reader</subproject>
+        <subproject>builtins</subproject>
+        <subproject>console-ui</subproject>
+        <subproject>prompt</subproject>
+        <subproject>console</subproject>
+        <subproject>groovy</subproject>
+        <subproject>remote-ssh</subproject>
+        <subproject>remote-telnet</subproject>
+        <subproject>style</subproject>
+        <subproject>curses</subproject>
+        <subproject>demo</subproject>
+        <subproject>graal</subproject>
+        <subproject>jansi-core</subproject>
+    </subprojects>
 
 </project>

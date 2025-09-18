@@ -33,6 +33,7 @@ import static org.jline.keymap.KeyMap.*;
 /**
  * Classes for all prompt implementations.
  */
+@SuppressWarnings("removal")
 public abstract class AbstractPrompt<T extends ConsoleUIItemIF> {
     protected final Terminal terminal;
     protected final BindingReader bindingReader;
@@ -410,7 +411,14 @@ public abstract class AbstractPrompt<T extends ConsoleUIItemIF> {
     }
 
     @SuppressWarnings("serial")
-    protected static class ExpandableChoiceException extends RuntimeException {}
+    protected static class ExpandableChoiceException extends RuntimeException {
+        /**
+         * Creates a new ExpandableChoiceException.
+         */
+        public ExpandableChoiceException() {
+            // Default constructor
+        }
+    }
 
     protected static class ConfirmPrompt extends AbstractPrompt<ListItemIF> {
         private enum Operation {

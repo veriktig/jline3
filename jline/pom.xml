@@ -9,15 +9,9 @@
     https://opensource.org/licenses/BSD-3-Clause
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>org.jline</groupId>
-        <artifactId>jline-parent</artifactId>
-        <version>3.30.5-SNAPSHOT</version>
-    </parent>
+    <parent />
 
     <artifactId>jline</artifactId>
     <name>JLine Bundle</name>
@@ -63,7 +57,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.jline</groupId>
             <artifactId>jline-terminal</artifactId>
             <scope>test</scope>
         </dependency>
@@ -72,23 +65,12 @@
             <artifactId>jline-terminal-jni</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jansi</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jna</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jline</groupId>
             <artifactId>jline-terminal-ffm</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jline</groupId>
             <artifactId>jline-reader</artifactId>
             <scope>test</scope>
         </dependency>
@@ -98,7 +80,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jline</groupId>
             <artifactId>jline-console</artifactId>
             <scope>test</scope>
         </dependency>
@@ -113,8 +94,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jline</groupId>
             <artifactId>jline-style</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-native</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>jansi-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -140,6 +129,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -149,6 +139,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -158,24 +149,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jline</groupId>
-                                    <artifactId>jline-terminal-jansi</artifactId>
-                                    <classifier>sources</classifier>
-                                    <type>jar</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                                    <includes>**/*.java</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jline</groupId>
-                                    <artifactId>jline-terminal-jna</artifactId>
-                                    <classifier>sources</classifier>
-                                    <type>jar</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                                    <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -185,6 +159,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -194,6 +169,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -203,6 +179,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -212,6 +189,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -221,6 +199,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -230,6 +209,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -239,6 +219,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
@@ -248,6 +229,7 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                                     <includes>**/*.java</includes>
+                                    <excludes>**/module-info.java</excludes>
                                 </artifactItem>
 
                                 <!-- resources -->
@@ -270,22 +252,6 @@
                                 <artifactItem>
                                     <groupId>org.jline</groupId>
                                     <artifactId>jline-terminal-ffm</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-                                    <excludes>**/*.class</excludes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jline</groupId>
-                                    <artifactId>jline-terminal-jansi</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-                                    <excludes>**/*.class</excludes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jline</groupId>
-                                    <artifactId>jline-terminal-jna</artifactId>
                                     <type>jar</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>

@@ -53,6 +53,13 @@ import org.jline.terminal.spi.TerminalProvider;
  */
 public class DumbTerminalProvider implements TerminalProvider {
 
+    /**
+     * Default constructor.
+     */
+    public DumbTerminalProvider() {
+        // Default constructor
+    }
+
     @Override
     public String name() {
         return TerminalBuilder.PROP_PROVIDER_DUMB;
@@ -84,36 +91,6 @@ public class DumbTerminalProvider implements TerminalProvider {
                 signalHandler);
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public Terminal sysTerminal(
-            String name,
-            String type,
-            boolean ansiPassThrough,
-            Charset encoding,
-            Charset stdinEncoding,
-            Charset stdoutEncoding,
-            Charset stderrEncoding,
-            boolean nativeSignals,
-            Terminal.SignalHandler signalHandler,
-            boolean paused,
-            SystemStream systemStream)
-            throws IOException {
-        // Use the appropriate output encoding based on the system stream
-        Charset outputEncoding = systemStream == SystemStream.Error ? stderrEncoding : stdoutEncoding;
-        return sysTerminal(
-                name,
-                type,
-                ansiPassThrough,
-                encoding,
-                stdinEncoding,
-                outputEncoding,
-                nativeSignals,
-                signalHandler,
-                paused,
-                systemStream);
-    }
-
     @Override
     public Terminal newTerminal(
             String name,
@@ -129,36 +106,6 @@ public class DumbTerminalProvider implements TerminalProvider {
             Size size)
             throws IOException {
         throw new UnsupportedOperationException();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public Terminal newTerminal(
-            String name,
-            String type,
-            InputStream masterInput,
-            OutputStream masterOutput,
-            Charset encoding,
-            Charset stdinEncoding,
-            Charset stdoutEncoding,
-            Charset stderrEncoding,
-            Terminal.SignalHandler signalHandler,
-            boolean paused,
-            Attributes attributes,
-            Size size)
-            throws IOException {
-        return newTerminal(
-                name,
-                type,
-                masterInput,
-                masterOutput,
-                encoding,
-                stdinEncoding,
-                stdoutEncoding,
-                signalHandler,
-                paused,
-                attributes,
-                size);
     }
 
     @Override

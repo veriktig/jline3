@@ -6,6 +6,12 @@
 
 JLine is a Java library for handling console input. It's similar to [GNU Readline](https://tiswww.case.edu/php/chet/readline/rltop.html) but with a focus on portability, flexibility, and integration with Java applications. See https://jline.org for its documentation.
 
+## Requirements
+
+- **Java 11 or higher**: JLine 4.x requires Java 11 as the minimum runtime version
+- **Maven 4.0 or higher**: JLine 4.x requires Maven 4.0+ for building from source
+- **Note**: JLine 3.x supports Java 8+ and Maven 3.x+, but JLine 4.x requires Java 11+ and Maven 4.0+
+
 ## Features
 
 - **Cross-platform support**: Works on Windows, macOS, Linux, and other Unix-like systems
@@ -26,14 +32,14 @@ JLine is a Java library for handling console input. It's similar to [GNU Readlin
 <dependency>
     <groupId>org.jline</groupId>
     <artifactId>jline</artifactId>
-    <version>3.30.0</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'org.jline:jline:3.30.0'
+implementation 'org.jline:jline:4.0.0'
 ```
 
 ## Quick Start
@@ -78,11 +84,68 @@ JLine is organized into several modules:
 - **jline-terminal**: Core terminal functionality
 - **jline-reader**: Line editing and reading
 - **jline-console**: Higher-level console abstractions
-- **jline-console-ui**: Interactive UI components (checkboxes, lists, etc.)
+- **jline-console-ui**: Interactive UI components (checkboxes, lists, etc.) - **Deprecated**
+- **jline-prompt**: Modern prompt API for interactive console applications
 - **jline-style**: Styling and coloring support
 - **jline-builtins**: Built-in commands and utilities
 - **jline-remote-ssh**: SSH server support
 - **jline-remote-telnet**: Telnet server support
+
+## JPMS (Java Platform Module System) Support
+
+JLine provides full support for JPMS starting with version 4.0. The following modules are proper JPMS modules with `module-info.java`:
+
+### ✅ JPMS Modules (with module-info.java)
+
+| Module | Artifact ID | Module Name | Description |
+|--------|-------------|-------------|-------------|
+| **Core Modules** | | | |
+| Native | `jline-native` | `org.jline.nativ` | Native library loading |
+| Terminal | `jline-terminal` | `org.jline.terminal` | Core terminal functionality |
+| Terminal FFM | `jline-terminal-ffm` | `org.jline.terminal.ffm` | FFM-based terminal (JDK 22+) |
+| Reader | `jline-reader` | `org.jline.reader` | Line editing and reading |
+| Style | `jline-style` | `org.jline.style` | Styling and coloring |
+| **Extended Modules** | | | |
+| Builtins | `jline-builtins` | `org.jline.builtins` | Built-in commands |
+| Console UI | `jline-console-ui` | `org.jline.console.ui` | Interactive UI components (deprecated) |
+| Prompt | `jline-prompt` | `org.jline.prompt` | Modern prompt API for interactive applications |
+| Console | `jline-console` | `org.jline.console` | Console framework |
+| Jansi Core | `jline-jansi-core` | `org.jline.jansi.core` | ANSI support |
+| Curses | `jline-curses` | `org.jline.curses` | Curses-like UI components |
+
+### ❌ Non-JPMS Modules (automatic modules)
+
+These modules remain as automatic modules for compatibility:
+
+| Module | Artifact ID | Reason |
+|--------|-------------|---------|
+| Terminal Jansi | `jline-terminal-jansi` | Legacy compatibility |
+| Groovy | `jline-groovy` | Groovy integration |
+| Remote SSH | `jline-remote-ssh` | SSH server support |
+| Remote Telnet | `jline-remote-telnet` | Telnet server support |
+| Demo | `jline-demo` | Example applications |
+| Graal | `jline-graal` | GraalVM native image support |
+
+### 🎯 Usage with JPMS
+
+When using JLine in a modular application, add the required modules to your `module-info.java`:
+
+```java
+module your.application {
+    requires org.jline.terminal;
+    requires org.jline.reader;
+    requires org.jline.style;        // Optional: for styling
+    requires org.jline.builtins;     // Optional: for built-in commands
+    requires org.jline.console;      // Optional: for console framework
+    requires org.jline.prompt;       // Optional: for modern prompt API
+    requires org.jline.console.ui;   // Optional: for legacy UI components (deprecated)
+}
+```
+
+**Note**: The FFM terminal provider (`jline-terminal-ffm`) requires JDK 22+ and native access permissions:
+```bash
+java --enable-native-access=org.jline.terminal.ffm your.application
+```
 
 ## Documentation
 

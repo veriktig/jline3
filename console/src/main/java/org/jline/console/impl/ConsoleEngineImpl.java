@@ -69,7 +69,7 @@ public class ConsoleEngineImpl extends JlineCommandRegistry implements ConsoleEn
     private static final String SLURP_FORMAT_TEXT = "TEXT";
     private static final String END_HELP = "END_HELP";
     private static final int HELP_MAX_SIZE = 30;
-    private final ScriptEngine engine;
+    protected final ScriptEngine engine;
     private Exception exception;
     private SystemRegistry systemRegistry;
     private String scriptExtension = "jline";
@@ -274,7 +274,9 @@ public class ConsoleEngineImpl extends JlineCommandRegistry implements ConsoleEn
                     throw new IllegalArgumentException();
                 }
             } else if (args[i].startsWith("${")) {
-                out[i] = engine.execute(expandName(args[i]));
+                String expanded = expandName(args[i]);
+                String statement = expanded.startsWith("$") ? args[i].substring(2, args[i].length() - 1) : expanded;
+                out[i] = engine.execute(statement);
             } else if (args[i].startsWith("$")) {
                 out[i] = engine.get(expandName(args[i]));
             } else {
@@ -310,7 +312,7 @@ public class ConsoleEngineImpl extends JlineCommandRegistry implements ConsoleEn
         return sb.toString();
     }
 
-    private String expandName(String name) {
+    protected String expandName(String name) {
         String regexVar = "[a-zA-Z_]+[a-zA-Z0-9_-]*";
         String out = name;
         if (name.matches("^\\$" + regexVar)) {
@@ -1223,7 +1225,7 @@ public class ConsoleEngineImpl extends JlineCommandRegistry implements ConsoleEn
         return completers;
     }
 
-    private static class VariableReferenceCompleter implements Completer {
+    protected static class VariableReferenceCompleter implements Completer {
         private final ScriptEngine engine;
 
         public VariableReferenceCompleter(ScriptEngine engine) {

@@ -97,6 +97,13 @@ public class DefaultParser implements Parser {
     private String regexCommand = "[:]?[a-zA-Z]+[a-zA-Z0-9_-]*";
     private int commandGroup = 4;
 
+    /**
+     * Creates a new DefaultParser.
+     */
+    public DefaultParser() {
+        // Default constructor
+    }
+
     //
     // Chainable setters
     //
@@ -841,24 +848,6 @@ public class DefaultParser implements Parser {
         private final int rawWordCursor;
 
         private final int rawWordLength;
-
-        @Deprecated
-        public ArgumentList(
-                final String line,
-                final List<String> words,
-                final int wordIndex,
-                final int wordCursor,
-                final int cursor) {
-            this(
-                    line,
-                    words,
-                    wordIndex,
-                    wordCursor,
-                    cursor,
-                    null,
-                    wordCursor,
-                    words.get(wordIndex).length());
-        }
 
         /**
          *
